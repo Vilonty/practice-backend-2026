@@ -1,66 +1,59 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, JwtPayload } from '../utils/jwt.utils';
+import jwt from 'jsonwebtoken';
 import { AppError } from './error.middleware';
+import User from '../models/user';
 
-// Расширяем тип Request, чтобы добавить user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
+interface JwtPayload {
+  id: number;
+  email: string;
+  role: string;
 }
 
-// Проверка, что пользователь авторизован
-export const authenticate = (
+export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
       throw new AppError('Требуется авторизация', 401);
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      throw new AppError('Недействительный или просроченный токен', 401);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    
+    // Проверяем, что пользователь существует
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
+      throw new AppError('Пользователь не найден', 401);
     }
 
-    req.user = decoded;
+    // Добавляем пользователя в request
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role as 'user' | 'admin',
+      name: user.name
+    };
+
     next();
   } catch (error) {
-    next(error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      next(new AppError('Недействительный токен', 401));
+    } else {
+      next(error);
+    }
   }
 };
 
-// Проверка, что пользователь - админ
 export const authorizeAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
   if (req.user?.role !== 'admin') {
-    throw new AppError('Требуются права администратора', 403);
+    next(new AppError('Требуются права администратора', 403));
   }
   next();
-};
-
-// Проверка, что пользователь - владелец ресурса или админ
-export const authorizeOwner = (resourceUserId: number) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (req.user?.role === 'admin') {
-      return next();
-    }
-    
-    if (req.user?.id !== resourceUserId) {
-      throw new AppError('У вас нет прав на это действие', 403);
-    }
-    
-    next();
-  };
 };

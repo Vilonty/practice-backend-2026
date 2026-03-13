@@ -5,6 +5,20 @@ import { hashPassword, comparePassword } from '../utils/password.utils';
 import { generateToken } from '../utils/jwt.utils';
 import { AppError } from '../middleware/error.middleware';
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number;
+        email: string;
+        role: 'user' | 'admin';
+        name: string;
+      };
+    }
+  }
+}
+
+
 export class AuthController {
   // Регистрация нового пользователя
   public async register(

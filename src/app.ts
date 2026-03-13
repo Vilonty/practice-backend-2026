@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error.middleware';
 // Импорт маршрутов
 import authRoutes from './routes/auth.routes';
 import roomRoutes from './routes/room.routes';
+import bookingRoutes from './routes/booking.routes';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.json());
 // Маршруты
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/rooms', roomRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -48,11 +50,11 @@ const startServer = async (): Promise<void> => {
     }
     
     app.listen(PORT, () => {
-      console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
+      console.log(`Сервер запущен на http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
-    console.error('❌ Ошибка запуска сервера:', error);
+    console.error('Ошибка запуска сервера:', error);
     process.exit(1);
   }
 };
