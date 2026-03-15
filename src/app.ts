@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import sequelize, { testConnection } from './config/database';
+import reviewRoutes from './routes/review.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 // Импорт маршрутов
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

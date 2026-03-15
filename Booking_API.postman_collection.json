@@ -1,0 +1,572 @@
+{
+  "info": {
+    "_postman_id": "e307362e-dc56-4f3a-9fab-3f12981fe365",
+    "name": "Booking API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "44024116",
+    "_collection_link": "https://go.postman.co/collection/44024116-e307362e-dc56-4f3a-9fab-3f12981fe365?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"newuser@example.com\",\r\n    \"password\": \"password123\",\r\n    \"name\": \"Новый Пользователь\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {\r",
+                  "    const response = pm.response.json();\r",
+                  "    pm.environment.set(\"userToken\", response.data.token);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"user@example.com\",\r\n    \"password\": \"user123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {\r",
+                  "    const response = pm.response.json();\r",
+                  "    pm.environment.set(\"adminToken\", response.data.token);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"admin123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "item": [
+        {
+          "name": "Get all rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get room by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rooms/search?page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create room (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Президентский люкс\",\r\n    \"room_number\": \"501\",\r\n    \"room_type\": \"suite\",\r\n    \"capacity\": 4,\r\n    \"has_air_conditioner\": true,\r\n    \"description\": \"Роскошный номер с панорамным видом\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update room (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Обновленный номер\",\r\n    \"capacity\": 3\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/rooms/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rooms/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rooms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"roomId\": 1,\r\n    \"date\": \"2026-04-20\",\r\n    \"startTime\": \"14:00\",\r\n    \"endTime\": \"16:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel booking",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"roomId\": 1,\r\n    \"date\": \"2025-01-20\",\r\n    \"startTime\": \"14:00\",\r\n    \"endTime\": \"16:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Available rooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/available?date=2025-01-20&startTime=10:00&endTime=12:00&capacity=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "available"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-01-20"
+                },
+                {
+                  "key": "startTime",
+                  "value": "10:00"
+                },
+                {
+                  "key": "endTime",
+                  "value": "12:00"
+                },
+                {
+                  "key": "capacity",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/rooms/1/schedule?date=2025-01-20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "rooms",
+                "1",
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-01-20"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"roomId\": 1,\r\n    \"rating\": 5,\r\n    \"comment\": \"Отличный номер, всё понравилось!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/room/1?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "room",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update review",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Delete review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -72,4 +72,38 @@ router.get(
   bookingController.getAllBookings
 );
 
+// Административные маршруты
+router.get(
+  '/admin/all',
+  authorizeAdmin,
+  bookingController.getAllBookings
+);
+
+// НОВЫЕ маршруты для админа
+router.get(
+  '/admin/search',
+  authorizeAdmin,
+  [
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('search').optional().isString(),
+    query('fromDate').optional().isDate(),
+    query('toDate').optional().isDate(),
+    query('status').optional().isIn(['pending', 'confirmed', 'cancelled', 'completed']),
+    query('minDuration').optional().isInt({ min: 1 }),
+    query('maxDuration').optional().isInt({ min: 1 })
+  ],
+  bookingController.searchBookings
+);
+
+router.get(
+  '/admin/stats',
+  authorizeAdmin,
+  [
+    query('fromDate').optional().isDate(),
+    query('toDate').optional().isDate()
+  ],
+  bookingController.getStats
+);
+
 export default router;

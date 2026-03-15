@@ -1,4 +1,5 @@
-import { Op, WhereOptions } from 'sequelize';
+import { Op, WhereOptions, Order } from 'sequelize';
+import sequelize from '../config/database'; 
 import Booking from '../models/booking';
 import Room from '../models/rooms';
 import User from '../models/user';
@@ -11,6 +12,9 @@ interface BookingFilters {
   toDate?: string;
   roomId?: number;
   userId?: number;
+  search?: string;
+  minDuration?: number;
+  maxDuration?: number;
 }
 
 class BookingService {
@@ -23,7 +27,7 @@ class BookingService {
     endTime: string, 
     excludeBookingId?: number
   ): Promise<boolean> {
-    const whereClause: WhereOptions = {
+    const whereClause: any = { // Используем any для обхода проблем с типами
       room_id: roomId,
       date: date,
       status: { [Op.in]: ['confirmed', 'pending'] },
@@ -181,7 +185,7 @@ class BookingService {
    // Получение бронирований пользователя
  
   async getUserBookings(userId: number, filters: BookingFilters = {}): Promise<Booking[]> {
-    const whereClause: WhereOptions = { user_id: userId };
+    const whereClause: any = { user_id: userId };
 
     if (filters.status) {
       whereClause.status = filters.status;
@@ -199,6 +203,7 @@ class BookingService {
       where: whereClause,
       include: [{
         model: Room,
+        as: 'room', // ВАЖНО: добавляем алиас, как определено в models/index.ts
         attributes: ['id', 'name', 'room_number', 'room_type', 'capacity']
       }],
       order: [['date', 'DESC'], ['start_time', 'ASC']]
@@ -211,7 +216,7 @@ class BookingService {
    // Получение всех бронирований (для админа)
  
   async getAllBookings(filters: BookingFilters = {}): Promise<Booking[]> {
-    const whereClause: WhereOptions = {};
+    const whereClause: any = {};
 
     if (filters.status) {
       whereClause.status = filters.status;
@@ -232,8 +237,16 @@ class BookingService {
     const bookings = await Booking.findAll({
       where: whereClause,
       include: [
-        { model: User, attributes: ['id', 'name', 'email'] },
-        { model: Room, attributes: ['id', 'name', 'room_number', 'room_type'] }
+        { 
+          model: User, 
+          as: 'user', 
+          attributes: ['id', 'name', 'email'] 
+        },
+        { 
+          model: Room, 
+          as: 'room',
+          attributes: ['id', 'name', 'room_number', 'room_type'] 
+        }
       ],
       order: [['date', 'DESC'], ['start_time', 'ASC']]
     });
@@ -251,6 +264,7 @@ class BookingService {
       },
       include: [{
         model: User,
+        as: 'user', // Добавляем алиас
         attributes: ['id', 'name']
       }],
       order: [['start_time', 'ASC']]
@@ -284,7 +298,7 @@ class BookingService {
     const busyRoomIds = busyBookings.map(b => b.room_id);
 
     // Поиск свободных комнат
-    const whereClause: WhereOptions = {
+    const whereClause: any = {
       is_active: true,
       id: { [Op.notIn]: busyRoomIds.length ? busyRoomIds : [0] }
     };
@@ -303,6 +317,114 @@ class BookingService {
     });
 
     return availableRooms;
+  }
+
+  // Статистика бронирований для админа
+  async getBookingStats(filters: BookingFilters = {}): Promise<any> {
+    const whereClause: any = {};
+
+    if (filters.fromDate) {
+      whereClause.date = { [Op.gte]: filters.fromDate };
+    }
+    if (filters.toDate) {
+      whereClause.date = { ...whereClause.date, [Op.lte]: filters.toDate };
+    }
+
+    // Статистика по статусам
+    const statusStats = await Booking.findAll({
+      where: whereClause,
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('status')), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
+
+    // Статистика по комнатам - ИСПРАВЛЕНО: добавлен as: 'room'
+    const roomStats = await Booking.findAll({
+      where: whereClause,
+      attributes: [
+        'room_id',
+        [sequelize.fn('COUNT', sequelize.col('room_id')), 'bookingCount']
+      ],
+      include: [{
+        model: Room,
+        as: 'room', // ВАЖНО: добавляем алиас
+        attributes: ['name', 'room_number']
+      }],
+      group: ['room_id', 'room.id'],
+      limit: 10,
+      order: [[sequelize.fn('COUNT', sequelize.col('room_id')), 'DESC']]
+    });
+
+    // Общее количество
+    const totalBookings = await Booking.count({ where: whereClause });
+
+    return {
+      totalBookings,
+      byStatus: statusStats,
+      popularRooms: roomStats
+    };
+  }
+
+  // Поиск бронирований с расширенной фильтрацией
+  async searchBookings(
+    filters: BookingFilters,
+    pagination: { limit: number; offset: number },
+    order: Order
+  ): Promise<{ rows: Booking[]; count: number }> {
+    const whereClause: any = {};
+
+    // Базовые фильтры
+    if (filters.status) {
+      whereClause.status = filters.status;
+    }
+    if (filters.roomId) {
+      whereClause.room_id = filters.roomId;
+    }
+    if (filters.userId) {
+      whereClause.user_id = filters.userId;
+    }
+    if (filters.fromDate) {
+      whereClause.date = { [Op.gte]: filters.fromDate };
+    }
+    if (filters.toDate) {
+      whereClause.date = { ...whereClause.date, [Op.lte]: filters.toDate };
+    }
+
+    // Поиск по тексту (имя пользователя или номер комнаты)
+    if (filters.search) {
+      whereClause[Op.or] = [
+        { '$user.name$': { [Op.iLike]: `%${filters.search}%` } },
+        { '$room.name$': { [Op.iLike]: `%${filters.search}%` } },
+        { '$room.room_number$': { [Op.iLike]: `%${filters.search}%` } }
+      ];
+    }
+
+    const result = await Booking.findAndCountAll({
+      where: whereClause,
+      include: [
+        { 
+          model: User, 
+          as: 'user', // ВАЖНО: алиас
+          attributes: ['id', 'name', 'email'],
+          required: !!filters.search
+        },
+        { 
+          model: Room, 
+          as: 'room', // ВАЖНО: алиас
+          attributes: ['id', 'name', 'room_number', 'room_type'],
+          required: !!filters.search
+        }
+      ],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      order,
+      distinct: true
+    });
+
+    return result;
   }
 }
 

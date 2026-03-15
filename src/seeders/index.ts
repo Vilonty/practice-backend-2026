@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
-import { sequelize, User, Room } from '../models';
+import { sequelize, User, Room, Review } from '../models'; // Добавили Review в импорт
 
 export async function runSeeders() {
   try {
     console.log('🌱 Запуск сидеров...');
 
-    // Очистка таблиц (в разработке)
+    // Очистка таблиц 
     await sequelize.sync({ force: true });
-    console.log('✅ База данных очищена');
+    console.log('База данных очищена');
 
     // Хеширование паролей
     const adminPassword = await bcrypt.hash('admin123', 10);
@@ -20,7 +20,7 @@ export async function runSeeders() {
       name: 'Админ Админович',
       role: 'admin',
     });
-    console.log('✅ Админ создан');
+    console.log('Админ создан');
 
     const user = await User.create({
       email: 'user@example.com',
@@ -28,9 +28,8 @@ export async function runSeeders() {
       name: 'Иван Петров',
       role: 'user',
     });
-    console.log('✅ Пользователь создан');
+    console.log('Пользователь создан');
 
-    // Создание номеров
     const rooms = await Room.bulkCreate([
       {
         name: 'Стандарт одноместный',
@@ -75,7 +74,29 @@ export async function runSeeders() {
     ]);
     console.log(`✅ Создано ${rooms.length} номеров`);
 
-    console.log('🌱 Сидеры успешно выполнены!');
+    const reviews = await Review.bulkCreate([
+      {
+        user_id: user.id,
+        room_id: rooms[0].id,
+        rating: 5,
+        comment: 'Отличный номер! Чисто, уютно, все понравилось'
+      },
+      {
+        user_id: user.id,
+        room_id: rooms[1].id,
+        rating: 4,
+        comment: 'Хороший номер, но немного шумно'
+      },
+      {
+        user_id: admin.id,
+        room_id: rooms[2].id,
+        rating: 5,
+        comment: 'Прекрасный люкс, рекомендую'
+      }
+    ]);
+    console.log(`Создано ${reviews.length} отзывов`);
+
+    console.log('Сидеры успешно выполнены!');
     
     // Вывод тестовых учетных данных
     console.log('\n=== Тестовые учетные данные ===');
@@ -84,7 +105,7 @@ export async function runSeeders() {
     console.log('===============================\n');
 
   } catch (error) {
-    console.error('❌ Ошибка при выполнении сидеров:', error);
+    console.error('Ошибка при выполнении сидеров:', error);
     throw error;
   }
 }

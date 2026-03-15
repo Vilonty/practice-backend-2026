@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import bookingService from '../services/booking.service';
 import { AppError } from '../middleware/error.middleware';
+import { 
+  getPaginationParams, 
+  getPaginationMeta, 
+  getSortingParams 
+} from '../utils/query.utils';
 import logger from '../utils/logger';
 
 export class BookingController {
@@ -173,6 +178,80 @@ export class BookingController {
       res.json({
         success: true,
         data: rooms
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+async searchBookings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Не авторизован', 401);
+    }
+
+    if (req.user.role !== 'admin') {
+      throw new AppError('Требуются права администратора', 403);
+    }
+
+    const { page, limit } = getPaginationParams(req.query);
+    const offset = (page - 1) * limit;
+    const sortParams = getSortingParams(req.query, [['date', 'DESC']]);
+    const order: any = [];
+  
+    if (req.query.sortBy === 'start_time') {
+      order.push(['start_time', req.query.sortOrder === 'DESC' ? 'DESC' : 'ASC']);
+    } else {
+      order.push(['date', 'DESC']);
+      order.push(['start_time', 'ASC']);
+    }
+
+    const filters = {
+      status: req.query.status as string,
+      roomId: req.query.roomId ? parseInt(req.query.roomId as string) : undefined,
+      userId: req.query.userId ? parseInt(req.query.userId as string) : undefined,
+      fromDate: req.query.fromDate as string,
+      toDate: req.query.toDate as string,
+      search: req.query.search as string,
+      minDuration: req.query.minDuration ? parseInt(req.query.minDuration as string) : undefined,
+      maxDuration: req.query.maxDuration ? parseInt(req.query.maxDuration as string) : undefined
+    };
+
+    const { rows, count } = await bookingService.searchBookings(
+      filters,
+      { limit, offset },
+      order 
+    );
+
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: getPaginationMeta(count, page, limit),
+      filters 
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+  // Статистика бронирований (для админа)
+  async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AppError('Не авторизован', 401);
+      }
+
+      const filters = {
+        fromDate: req.query.fromDate as string,
+        toDate: req.query.toDate as string
+      };
+
+      const stats = await bookingService.getBookingStats(filters);
+
+      res.json({
+        success: true,
+        data: stats
       });
     } catch (error) {
       next(error);

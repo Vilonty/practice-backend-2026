@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, query } from 'express-validator'; // Добавьте query
 import { RoomController } from '../controllers/room.controller';
 import { authenticate, authorizeAdmin } from '../middleware/auth.middleware';
 
@@ -20,9 +20,25 @@ const roomValidation = [
   body('description').optional().trim(),
 ];
 
+// ВАЖНО: Специфичные маршруты должны быть ПЕРЕД динамическими (/search перед /:id)
+router.get(
+  '/search',
+  [
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+    query('search').optional().isString().trim(),
+    query('roomType').optional().isIn(['standard', 'deluxe', 'suite', 'family']),
+    query('capacity').optional().isInt({ min: 1 }).toInt(),
+    query('hasAirConditioner').optional().isBoolean().toBoolean(),
+    query('sortBy').optional().isIn(['id', 'capacity', 'name']),
+    query('sortOrder').optional().isIn(['ASC', 'DESC']).toUpperCase()
+  ],
+  roomController.searchRooms
+);
+
 // Публичные маршруты (доступны всем)
 router.get('/', roomController.getAllRooms);
-router.get('/:id', roomController.getRoomById);
+router.get('/:id', roomController.getRoomById);  // Динамический маршрут должен быть ПОСЛЕ специфичных
 
 // Маршруты только для админа
 router.post(
@@ -48,5 +64,4 @@ router.delete(
   roomController.deleteRoom
 );
 
-// ВАЖНО: экспортируем по умолчанию
 export default router;
