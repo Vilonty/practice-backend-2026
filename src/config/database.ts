@@ -18,9 +18,11 @@ console.log({
   DB_PORT,
   DB_NAME,
   DB_USER,
-  DB_PASSWORD: '***' 
+  DB_PASSWORD: '***',
+  NODE_ENV
 });
 
+// Важно: в продакшене (Docker) DB_HOST должно быть 'postgres'
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: DB_HOST,
   port: parseInt(DB_PORT, 10),
